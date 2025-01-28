@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import { User } from "../models/user.js";
+import jwt from "jsonwebtoken";
 
 export const register = async (req, res) => {
   try {
@@ -55,10 +56,22 @@ export const login = async (req, res) => {
         message: "Incorrect email or password",
       });
     }
-    return res.status(200).json({
-      success: true,
-      message: `Welcome back ${user.fullName}`,
+
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, {
+      expiresIn: "9d",
     });
+
+    return res
+      .status(200)
+      .cookie("token", token, {
+        httpOnly: true,
+        sameSite: "strict",
+        maxAge: 24 * 60 * 60 * 1000,
+      })
+      .json({
+        success: true,
+        message: `Welcome back ${user.fullName}`,
+      });
   } catch (error) {
     console.log(error);
   }
